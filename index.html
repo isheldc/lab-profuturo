@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LabInABox - Laboratorio Virtual Interactivo</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="manifest" href="manifest.json">
+</head>
+<body>
+    <div class="container">
+        <!-- VISTA 1: INICIO -->
+        <header>
+            <h1>🔬 LabInABox</h1>
+            <p>Laboratorio científico interactivo de bajo coste y sin conexión</p>
+        </header>
+
+        <section id="menu-niveles" class="card">
+            <h2>Selecciona tu Nivel Educativo</h2>
+            <button class="btn" onclick="seleccionarNivel('Secundaria')">Secundaria (Básico)</button>
+            <button class="btn" onclick="seleccionarNivel('Preparatoria')">Preparatoria (Avanzado)</button>
+        </section>
+
+        <!-- VISTA 2: EXPERIMENTOS (Oculta al inicio) -->
+        <section id="menu-experimentos" class="card hidden">
+            <h2 id="titulo-nivel">Experimentos</h2>
+            <button class="btn secondary" onclick="volverMenu()">← Cambiar Nivel</button>
+            <div class="experiment-list">
+                <div class="experiment-item" onclick="cargarExperimento('Circuito Ohm')">
+                    <h3>⚡ Ley de Ohm y Circuitos</h3>
+                    <p>Analiza la relación entre Voltaje, Corriente y Resistencia.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- VISTA 3: ASISTENTE DEL MÉTODO CIENTÍFICO (Oculta al inicio) -->
+        <section id="vista-experimento" class="card hidden">
+            <button class="btn secondary" onclick="volverExperimentos()">← Volver a lista</button>
+            <h2 id="nombre-experimento">Nombre del Experimento</h2>
+            
+            <div class="step-container">
+                <div class="step active" id="paso-1">
+                    <h3>Paso 1: Planteamiento de Hipótesis</h3>
+                    <p>¿Qué crees que suceda si aumentamos la resistencia del circuito?</p>
+                    <textarea id="input-hipotesis" placeholder="Escribe tu hipótesis aquí..."></textarea>
+                    <button class="btn" onclick="siguientePaso(2)">Siguiente: Experimentar</button>
+                </div>
+
+                <div class="step hidden" id="paso-2">
+                    <h3>Paso 2: Simulación y Experimentación</h3>
+                    <p>Mueve el control deslizante para cambiar la resistencia y observa el cambio en la corriente:</p>
+                    <label>Resistencia (Ω): <span id="val-resistencia">10</span></label>
+                    <input type="range" id="slider-res" min="1" max="100" value="10" oninput="actualizarSimulacion()">
+                    <div class="sim-output">
+                        <p>Corriente estimada: <span id="val-corriente">1.2A</span></p>
+                    </div>
+                    <button class="btn" onclick="siguientePaso(3)">Siguiente: Conclusión</button>
+                </div>
+
+                <div class="step hidden" id="paso-3">
+                    <h3>Paso 3: Conclusión y Justificación</h3>
+                    <p>¿Se cumplió tu hipótesis inicial? ¿Por qué?</p>
+                    <textarea id="input-conclusion" placeholder="Escribe tus observaciones y conclusiones..."></textarea>
+                    <button class="btn success" onclick="finalizarExperimento()">¡Guardar Experimento!</button>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <script src="app.js"></script>
+    if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('sw.js')
+      .then(() => console.log("Service Worker registrado con éxito"))
+      .catch(err => console.log("Fallo al registrar Service Worker", err));
+  });
+}
+</body>
+</html>
