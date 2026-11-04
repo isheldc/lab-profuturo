@@ -9,73 +9,152 @@
 </head>
 <body>
     <div class="container">
-        <!-- VISTA 1: INICIO -->
+        
+        <!-- HEADER PRINCIPAL -->
         <header>
-            <h1><img src="icon-512.png" alt="Logo" width="40" height="30" style="vertical-align: middle; margin-right: 6px;"> Nexora Lab</h1>
+            <h1>
+                <img src="icon-512.png" alt="Logo" width="40" height="30" style="vertical-align: middle; margin-right: 6px;"> 
+                Nexora Lab
+            </h1>
             <p>Laboratorio científico interactivo de bajo coste y sin conexión</p>
         </header>
 
+        <!-- VISTA 1: SELECCIÓN DE NIVEL -->
         <section id="menu-niveles" class="card">
             <h2>Selecciona tu Nivel Educativo</h2>
             <button class="btn" onclick="seleccionarNivel('Secundaria')">Secundaria (Básico)</button>
             <button class="btn" onclick="seleccionarNivel('Preparatoria')">Preparatoria (Avanzado)</button>
         </section>
 
-        <!-- VISTA 2: EXPERIMENTOS (Oculta al inicio) -->
-        <section id="menu-experimentos" class="card hidden">
-            <h2 id="titulo-nivel">Experimentos</h2>
-            <button class="btn secondary" onclick="volverMenu()">← Cambiar Nivel</button>
-            <div class="experiment-list">
-                <div class="experiment-item" onclick="cargarExperimento('Circuito Ohm')">
-                    <h3>⚡ Ley de Ohm y Circuitos</h3>
-                    <p>Analiza la relación entre Voltaje, Corriente y Resistencia.</p>
-                </div>
-            </div>
-        </section>
-
-        <!-- VISTA 3: ASISTENTE DEL MÉTODO CIENTÍFICO (Oculta al inicio) -->
-        <section id="vista-experimento" class="card hidden">
-            <button class="btn secondary" onclick="volverExperimentos()">← Volver a lista</button>
-            <h2 id="nombre-experimento">Nombre del Experimento</h2>
+        <!-- VISTA 2: DESPLEGABLE DE MATERIAS -->
+        <section id="menu-materias" class="card hidden">
+            <h2 id="titulo-nivel">Selecciona una Materia</h2>
+            <button class="btn secondary" onclick="volverMenuNiveles()">← Cambiar Nivel</button>
             
-            <div class="step-container">
-                <div class="step active" id="paso-1">
-                    <h3>Paso 1: Planteamiento de Hipótesis</h3>
-                    <p>¿Qué crees que suceda si aumentamos la resistencia del circuito?</p>
-                    <textarea id="input-hipotesis" placeholder="Escribe tu hipótesis aquí..."></textarea>
-                    <button class="btn" onclick="siguientePaso(2)">Siguiente: Experimentar</button>
-                </div>
-
-                <div class="step hidden" id="paso-2">
-                    <h3>Paso 2: Simulación y Experimentación</h3>
-                    <p>Mueve el control deslizante para cambiar la resistencia y observa el cambio en la corriente:</p>
-                    <label>Resistencia (Ω): <span id="val-resistencia">10</span></label>
-                    <input type="range" id="slider-res" min="1" max="100" value="10" oninput="actualizarSimulacion()">
-                    <div class="sim-output">
-                        <p>Corriente estimada: <span id="val-corriente">1.2A</span></p>
-                    </div>
-                    <button class="btn" onclick="siguientePaso(3)">Siguiente: Conclusión</button>
-                </div>
-
-                <div class="step hidden" id="paso-3">
-                    <h3>Paso 3: Conclusión y Justificación</h3>
-                    <p>¿Se cumplió tu hipótesis inicial? ¿Por qué?</p>
-                    <textarea id="input-conclusion" placeholder="Escribe tus observaciones y conclusiones..."></textarea>
-                    <button class="btn success" onclick="finalizarExperimento()">¡Guardar Experimento!</button>
-                </div>
+            <div class="experiment-list" style="margin-top: 15px;">
+                <select id="lista-materias" class="btn">
+                    <option value="">-- Elige una materia --</option>
+                    <option value="Fisica">Física</option>
+                    <option value="Quimica">Química</option>
+                    <option value="Biologia">Biología</option>
+                </select>
+                <button class="btn" onclick="irAMateria()">IR</button>
             </div>
         </section>
+
+        <!-- VISTAS DE BOTONES POR MATERIA (VISTA 3: INDIVIDUALES) -->
+
+        <!-- Lista de Experimentos: FÍSICA -->
+        <section id="vista-materia-fisica" class="card hidden">
+            <button class="btn secondary" onclick="volverAMaterias()">← Cambiar Materia</button>
+            <h2>Experimentos de Física</h2>
+            <div class="grid-experimentos" style="display: flex; flex-direction: column; gap: 10px; margin-top: 15px;">
+                <button class="btn" onclick="cargarExperimento('fisica-ohm')">Ley de Ohm</button>
+                <button class="btn" onclick="cargarExperimento('fisica-pendulo')">Péndulo Simple</button>
+            </div>
+        </section>
+
+        <!-- Lista de Experimentos: QUÍMICA -->
+        <section id="vista-materia-quimica" class="card hidden">
+            <button class="btn secondary" onclick="volverAMaterias()">← Cambiar Materia</button>
+            <h2>Experimentos de Química</h2>
+            <div class="grid-experimentos" style="display: flex; flex-direction: column; gap: 10px; margin-top: 15px;">
+                <button class="btn" onclick="cargarExperimento('quimica-ph')">Escala de pH</button>
+                <button class="btn" onclick="cargarExperimento('quimica-reaccion')">Reacción Endotérmica</button>
+            </div>
+        </section>
+
+        <!-- Lista de Experimentos: BIOLOGÍA -->
+        <section id="vista-materia-biologia" class="card hidden">
+            <button class="btn secondary" onclick="volverAMaterias()">← Cambiar Materia</button>
+            <h2>Experimentos de Biología</h2>
+            <div class="grid-experimentos" style="display: flex; flex-direction: column; gap: 10px; margin-top: 15px;">
+                <button class="btn" onclick="cargarExperimento('biologia-fotosintesis')">Fotosíntesis y Luz</button>
+                <button class="btn" onclick="cargarExperimento('biologia-osmosis')">Ósmosis Celular</button>
+            </div>
+        </section>
+
+
+        <!-- VISTAS DE LABORATORIO INDIVIDUALES (VISTA 4) -->
+
+        <!-- Experimento: Ley de Ohm -->
+        <section id="exp-fisica-ohm" class="card hidden">
+            <button class="btn secondary" onclick="volverAMateriaActual('Fisica')">← Volver a Física</button>
+            <h2>Laboratorio: Ley de Ohm</h2>
+            <div class="step-container">
+                <h3>Paso 1: Planteamiento de Hipótesis</h3>
+                <textarea placeholder="Escribe tu hipótesis aquí..."></textarea>
+                <button class="btn success" style="margin-top: 10px;">Guardar Experimento</button>
+            </div>
+        </section>
+
+        <!-- Experimento: Péndulo Simple -->
+        <section id="exp-fisica-pendulo" class="card hidden">
+            <button class="btn secondary" onclick="volverAMateriaActual('Fisica')">← Volver a Física</button>
+            <h2>Laboratorio: Péndulo Simple</h2>
+            <div class="step-container">
+                <h3>Simulación de Longitud</h3>
+                <p>Modifica la longitud del hilo para medir el periodo de oscilación.</p>
+                <button class="btn success" style="margin-top: 10px;">Guardar Experimento</button>
+            </div>
+        </section>
+
+        <!-- Experimento: Escala de pH -->
+        <section id="exp-quimica-ph" class="card hidden">
+            <button class="btn secondary" onclick="volverAMateriaActual('Quimica')">← Volver a Química</button>
+            <h2>Laboratorio: Medición de pH</h2>
+            <div class="step-container">
+                <h3>Prueba de Sustancias</h3>
+                <p>Identifica si las soluciones son ácidas o básicas.</p>
+                <button class="btn success" style="margin-top: 10px;">Guardar Experimento</button>
+            </div>
+        </section>
+
+        <!-- Experimento: Reacción Endotérmica -->
+        <section id="exp-quimica-reaccion" class="card hidden">
+            <button class="btn secondary" onclick="volverAMateriaActual('Quimica')">← Volver a Química</button>
+            <h2>Laboratorio: Reacción Endotérmica</h2>
+            <div class="step-container">
+                <h3>Cambios de Temperatura</h3>
+                <p>Mide la absorción de calor al mezclar los reactivos.</p>
+                <button class="btn success" style="margin-top: 10px;">Guardar Experimento</button>
+            </div>
+        </section>
+
+        <!-- Experimento: Fotosíntesis y Luz -->
+        <section id="exp-biologia-fotosintesis" class="card hidden">
+            <button class="btn secondary" onclick="volverAMateriaActual('Biologia')">← Volver a Biología</button>
+            <h2>Laboratorio: Fotosíntesis y Luz</h2>
+            <div class="step-container">
+                <h3>Intensidad Lumínica</h3>
+                <p>Observa la producción de oxígeno según la exposición a la luz.</p>
+                <button class="btn success" style="margin-top: 10px;">Guardar Experimento</button>
+            </div>
+        </section>
+
+        <!-- Experimento: Ósmosis Celular -->
+        <section id="exp-biologia-osmosis" class="card hidden">
+            <button class="btn secondary" onclick="volverAMateriaActual('Biologia')">← Volver a Biología</button>
+            <h2>Laboratorio: Ósmosis Celular</h2>
+            <div class="step-container">
+                <h3>Comportamiento Celular</h3>
+                <p>Analiza el efecto de soluciones hipertónicas e hipotónicas.</p>
+                <button class="btn success" style="margin-top: 10px;">Guardar Experimento</button>
+            </div>
+        </section>
+
     </div>
 
+    <!-- SCRIPT PRINCIPAL Y SERVICE WORKER -->
     <script src="app.js"></script>
     <script>
-  if ('serviceWorker' in navigator) {
-    window.addEventListener('load', () => {
-      navigator.serviceWorker.register('sw.js')
-        .then(() => console.log("Service Worker registrado con éxito"))
-        .catch(err => console.log("Fallo al registrar Service Worker", err));
-    });
-  }
-</script>
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('sw.js')
+            .then(() => console.log("Service Worker registrado con éxito"))
+            .catch(err => console.log("Fallo al registrar Service Worker", err));
+        });
+      }
+    </script>
 </body>
 </html>
