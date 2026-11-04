@@ -1,75 +1,76 @@
 let nivelActual = "";
 
-// Oculta todas las secciones con la clase .card
-function ocultarTodasLasVistas() {
-    document.querySelectorAll('.card').forEach(sec => sec.classList.add('hidden'));
-}
-
-// 1. Selecciona el nivel educativo y pasa al menú desplegable de materias
 function seleccionarNivel(nivel) {
     nivelActual = nivel;
-    ocultarTodasLasVistas();
-    document.getElementById("titulo-nivel").innerText = `Experimentos para ${nivel}`;
-    document.getElementById("menu-materias").classList.remove("hidden");
+    
+    // Actualizamos el título
+    const titulo = document.getElementById("titulo-nivel");
+    if (titulo) titulo.innerText = `Experimentos para ${nivel}`;
+    
+    // Ocultamos niveles y mostramos el menú de experimentos/materias
+    const menuNiveles = document.getElementById("menu-niveles");
+    const menuExperimentos = document.getElementById("menu-experimentos");
+    
+    if (menuNiveles) menuNiveles.classList.add("hidden");
+    if (menuExperimentos) menuExperimentos.classList.remove("hidden");
 }
 
-// 2. Vuelve desde el menú de materias al selector de niveles
-function volverMenuNiveles() {
-    ocultarTodasLasVistas();
-    document.getElementById("menu-niveles").classList.remove("hidden");
+function volverMenu() {
+    const menuExperimentos = document.getElementById("menu-experimentos");
+    const menuNiveles = document.getElementById("menu-niveles");
+    
+    if (menuExperimentos) menuExperimentos.classList.add("hidden");
+    if (menuNiveles) menuNiveles.classList.remove("hidden");
 }
 
-// 3. Valida y muestra la lista de experimentos según la materia seleccionada
-function irAMateria() {
-    const materia = document.getElementById('lista-materias').value;
+// Función para el botón "IR" del desplegable de materias
+function IrMateria() {
+    const selectMateria = document.getElementById("lista-experimentos");
+    if (!selectMateria) return;
+    
+    const materia = selectMateria.value;
     if (!materia) {
-        alert('Por favor selecciona una materia de la lista.');
+        alert("Por favor selecciona una materia.");
         return;
     }
 
-    ocultarTodasLasVistas();
-    if (materia === 'Fisica') {
-        document.getElementById('vista-materia-fisica').classList.remove("hidden");
-    } else if (materia === 'Quimica') {
-        document.getElementById('vista-materia-quimica').classList.remove("hidden");
-    } else if (materia === 'Biologia') {
-        document.getElementById('vista-materia-biologia').classList.remove("hidden");
+    // Ocultamos el menú de experimentos
+    document.getElementById("menu-experimentos").classList.add("hidden");
+    
+    // Mostramos la vista del experimento o método científico
+    const vistaExperimento = document.getElementById("vista-experimento");
+    if (vistaExperimento) {
+        vistaExperimento.classList.remove("hidden");
+        // Actualizamos el nombre con la materia seleccionada
+        const nombreExp = document.getElementById("nombre-experimento");
+        if (nombreExp) nombreExp.innerText = `Laboratorio de ${materia} (${nivelActual})`;
     }
 }
 
-// 4. Vuelve del menú de una materia específica al selector de materias
-function volverAMaterias() {
-    ocultarTodasLasVistas();
-    document.getElementById("menu-materias").classList.remove("hidden");
+function cargarExperimento(nombre) {
+    const menuExp = document.getElementById("menu-experimentos");
+    const vistaExp = document.getElementById("vista-experimento");
+    const nombreExp = document.getElementById("nombre-experimento");
+    
+    if (nombreExp) nombreExp.innerText = nombre;
+    if (menuExp) menuExp.classList.add("hidden");
+    if (vistaExp) vistaExp.classList.remove("hidden");
 }
 
-// 5. Carga un laboratorio/experimento individual específico
-function cargarExperimento(idExp) {
-    ocultarTodasLasVistas();
-    const experimentoTarget = document.getElementById('exp-' + idExp);
-    if (experimentoTarget) {
-        experimentoTarget.classList.remove("hidden");
-    }
+function volverExperimentos() {
+    const vistaExp = document.getElementById("vista-experimento");
+    const menuExp = document.getElementById("menu-experimentos");
+    
+    if (vistaExp) vistaExp.classList.add("hidden");
+    if (menuExp) menuExp.classList.remove("hidden");
 }
 
-// 6. Regresa desde un laboratorio individual a su lista de materia correspondiente
-function volverAMateriaActual(materia) {
-    document.getElementById('lista-materias').value = materia;
-    irAMateria();
+function siguientePaso(pasoDestino) {
+    document.querySelectorAll(".step").forEach(el => el.classList.add("hidden"));
+    const pasoTarget = document.getElementById(`paso-${pasoDestino}`);
+    if (pasoTarget) pasoTarget.classList.remove("hidden");
 }
 
-// 7. Control de pasos internos dentro de un experimento (si usas pasos)
-function siguientePaso(pasoDestino, contenedorId) {
-    // Si tus experimentos tienen múltiples pasos internos
-    const contenedor = document.getElementById(contenedorId);
-    if (contenedor) {
-        contenedor.querySelectorAll(".step").forEach(el => el.classList.add("hidden"));
-        const pasoTarget = contenedor.querySelector(`#paso-${pasoDestino}`);
-        if (pasoTarget) pasoTarget.classList.remove("hidden");
-    }
-}
-
-// 8. Simulación específica (ejemplo para la Ley de Ohm)
 function actualizarSimulacion() {
     const slider = document.getElementById("slider-res");
     if (!slider) return;
@@ -85,7 +86,6 @@ function actualizarSimulacion() {
     if (valCorr) valCorr.innerText = corriente + "A";
 }
 
-// 9. Finalizar el experimento
 function finalizarExperimento() {
     alert("¡Excelente trabajo! Has completado el ciclo del método científico y los datos se han registrado correctamente.");
     location.reload();
