@@ -768,10 +768,15 @@ function iniciarMisionLaboratorio(exp) {
     document.getElementById("menu-materias").classList.add("hidden");
     document.getElementById("vista-laboratorio").classList.remove("hidden");
 
-    cambiarPaso(1);
+    // Validar si es el experimento de circuitos para abrir el taller de ensamblaje guiado
+    if (exp.simTipo === "circuito") {
+        abrirConstructorCircuito();
+    } else {
+        cambiarPaso(1);
+    }
+
     detectarSensores();
 }
-
 function cambiarPaso(paso) {
     pasoActual = paso;
     document.querySelectorAll(".step-card").forEach(c => c.classList.add("hidden"));
@@ -1396,12 +1401,11 @@ function arrancarCanvas(canvasId, tipo, esDemo) {
             const longitudCuerda = 120;
             const g = 0.4;
 
-            // Física de oscilación cuando no se está sujetando la esfera
             if (!simVars.isDraggingPendulo) {
                 const aceleracionAngular = (-g / longitudCuerda) * Math.sin(simVars.anguloPendulo);
                 simVars.velAngular += aceleracionAngular;
                 simVars.anguloPendulo += simVars.velAngular;
-                simVars.velAngular *= 0.998; // Conservación de energía
+                simVars.velAngular *= 0.998;
             }
 
             const xEsfera = cx + longitudCuerda * Math.sin(simVars.anguloPendulo);
@@ -1428,7 +1432,6 @@ function arrancarCanvas(canvasId, tipo, esDemo) {
             ctx.fill();
             ctx.shadowBlur = 0;
 
-            // Indicador flotante del ángulo al arrastrar
             if (simVars.isDraggingPendulo) {
                 const grados = Math.round((Math.abs(simVars.anguloPendulo) * 180) / Math.PI);
                 ctx.fillStyle = "rgba(10, 14, 20, 0.85)";
@@ -1441,6 +1444,88 @@ function arrancarCanvas(canvasId, tipo, esDemo) {
                 ctx.textAlign = "center";
                 ctx.fillText(`Ángulo: ${grados}°`, cx, canvas.height - 21);
                 ctx.textAlign = "left";
+            }
+
+        } else if (tipo === "circuito") {
+            const cx = canvas.width / 2;
+            const cy = canvas.height / 2;
+            const V = simVars.param1 || 9; // Voltaje
+
+            // Dibujar Cables del Circuito
+            ctx.strokeStyle = "#00e5ff";
+            ctx.lineWidth = 4;
+            ctx.beginPath();
+            ctx.strokeRect(cx - 160, cy - 70, 320, 140);
+
+            // Batería (Lado Izquierdo)
+            ctx.fillStyle = "#0a0e14";
+            ctx.fillRect(cx - 165, cy - 25, 10, 50);
+            
+            ctx.fillStyle = "#f59e0b"; // Batería dorada
+            ctx.fillRect(cx - 170, cy - 20, 20, 40);
+            ctx.fillStyle = "#ffffff";
+            ctx.font = "bold 11px sans-serif";
+            ctx.fillText(`${V}V`, cx - 198, cy + 5);
+
+            // Interruptor (Parte Superior)
+            ctx.fillStyle = "#0a0e14";
+            ctx.fillRect(cx - 30, cy - 75, 60, 10);
+            ctx.strokeStyle = "#10b981"; // Conectado / cerrado
+            ctx.beginPath();
+            ctx.moveTo(cx - 25, cy - 70);
+            ctx.lineTo(cx + 25, cy - 70);
+            ctx.stroke();
+
+            // Resistencia (Lado Derecho)
+            ctx.fillStyle = "#0a0e14";
+            ctx.fillRect(cx + 155, cy - 20, 10, 40);
+            ctx.strokeStyle = "#a855f7";
+            ctx.beginPath();
+            ctx.moveTo(cx + 160, cy - 20);
+            ctx.lineTo(cx + 170, cy - 10);
+            ctx.lineTo(cx + 150, cy);
+            ctx.lineTo(cx + 170, cy + 10);
+            ctx.lineTo(cx + 160, cy + 20);
+            ctx.stroke();
+
+            // Foco / Bombilla (Parte Inferior)
+            const brillo = Math.min(1, V / 15);
+            ctx.fillStyle = `rgba(255, 235, 59, ${0.2 + brillo * 0.8})`;
+            ctx.shadowColor = "#ffee55";
+            ctx.shadowBlur = brillo * 25;
+
+            ctx.beginPath();
+            ctx.arc(cx, cy + 70, 20, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.shadowBlur = 0;
+
+            // Filamento del foco
+            ctx.strokeStyle = "#ffffff";
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.arc(cx, cy + 70, 8, Math.PI, 0);
+            ctx.stroke();
+
+            // Flujo de Electrones (Animación de puntos)
+            ctx.fillStyle = "#00e5ff";
+            const numElectrones = 8;
+            for (let i = 0; i < numElectrones; i++) {
+                const pos = ((t * 60 + i * (640 / numElectrones)) % 640);
+                let ex = cx - 160, ey = cy - 70;
+                
+                if (pos < 320) {
+                    ex = cx - 160 + pos;
+                    ey = cy - 70;
+                } else if (pos < 460) {
+                    ex = cx + 160;
+                    ey = cy - 70 + (pos - 320);
+                } else if (pos < 640) {
+                    ex = cx + 160 - (pos - 460);
+                    ey = cy + 70;
+                }
+                ctx.beginPath();
+                ctx.arc(ex, ey, 3, 0, Math.PI * 2);
+                ctx.fill();
             }
 
         } else {
@@ -1655,7 +1740,52 @@ function reiniciarALista() {
     document.getElementById("vista-evaluacion").classList.add("hidden");
     document.getElementById("menu-materias").classList.remove("hidden");
 }
+// --- LÓGICA DEL CONSTRUCTOR DE CIRCUITOS ---
+let circuitoEstado = { bateria: false, cable: false, foco: false };
 
+function abrirConstructorCircuito() {
+    circuitoEstado = { bateria: false, cable: false, foco: false };
+    document.getElementById("modal-builder-circuito").classList.remove("hidden");
+    document.getElementById("builder-step-tag").innerText = "Paso 1 de 3";
+    document.getElementById("builder-instruction").innerText = "1. Haz clic en la Batería para energizar el circuito:";
+    document.getElementById("btn-comp-bateria").classList.remove("hidden");
+    document.getElementById("btn-comp-cable").classList.add("hidden");
+    document.getElementById("btn-comp-foco").classList.add("hidden");
+    document.getElementById("btn-finish-circuit").classList.add("hidden");
+    document.getElementById("builder-preview").innerHTML = "<i>Tablero de pruebas listo...</i>";
+}
+
+function agregarComponenteCircuito(tipo) {
+    const preview = document.getElementById("builder-preview");
+    
+    if (tipo === 'bateria') {
+        circuitoEstado.bateria = true;
+        preview.innerHTML = "🔋 <b>Batería de 9V colocada.</b> Falta conectar los conductores.";
+        document.getElementById("btn-comp-bateria").classList.add("hidden");
+        document.getElementById("btn-comp-cable").classList.remove("hidden");
+        document.getElementById("builder-step-tag").innerText = "Paso 2 de 3";
+        document.getElementById("builder-instruction").innerText = "2. Conecta los cables conductores alrededor del circuito:";
+    } else if (tipo === 'cable') {
+        circuitoEstado.cable = true;
+        preview.innerHTML = "🔋 Batería + ⚡ <b>Cables conectados.</b> Falta instalar el receptor de luz.";
+        document.getElementById("btn-comp-cable").classList.add("hidden");
+        document.getElementById("btn-comp-foco").classList.remove("hidden");
+        document.getElementById("builder-step-tag").innerText = "Paso 3 de 3";
+        document.getElementById("builder-instruction").innerText = "3. Instala la bombilla / foco para cerrar el circuito:";
+    } else if (tipo === 'foco') {
+        circuitoEstado.foco = true;
+        preview.innerHTML = "✅ <b>¡Circuito Completo!</b> 🔋 Batería + ⚡ Cables + 💡 Foco instalado.";
+        document.getElementById("btn-comp-foco").classList.add("hidden");
+        document.getElementById("builder-step-tag").innerText = "Completado";
+        document.getElementById("builder-instruction").innerText = "¡Excelente trabajo! Todo está listo para la fase de observación.";
+        document.getElementById("btn-finish-circuit").classList.remove("hidden");
+    }
+}
+
+function completarConstruccionCircuito() {
+    document.getElementById("modal-builder-circuito").classList.add("hidden");
+    cambiarPaso(1); // Continúa hacia la observación
+}
 window.onload = () => {
     syncRed();
 };
