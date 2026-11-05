@@ -1355,61 +1355,131 @@ function arrancarCanvas(canvasId, tipo, esDemo) {
             const cx = canvas.width / 2;
             const cy = 30;
             const longitudCuerda = 120;
-            const g = 0.4; // Gravedad visual para aceleración realista
+            const g = 0.4; 
 
+            // Inicializar ángulo y velocidad si no existen
+            if (simVars.anguloPendulo === undefined) {
+                simVars.anguloPendulo = (45 * Math.PI) / 180;
+                simVars.velAngular = 0;
+                simVars.isDraggingPendulo = false;
+            }
+
+            // Configurar eventos de arrastre específicos para el péndulo (solo una vez)
+            if (!canvas._penduloListenersAttached) {
+                canvas._penduloListenersAttached = true;
+
+                const iniciarArrastrePendulo = (clientX, clientY) => {
+                    const rect = canvas.getBoundingClientRect();
+                    const mx = (clientX - rect.left) * (canvas.width / rect.width);
+                    const my = (clientY - rect.top) * (canvas.height / rect.height);
+
+                    // Posición actual de la esfera
+                    const xEsfera = cx + longitudCuerda * Math.sin(simVars.anguloPendulo);
+                    const yEsfera = cy + longitudCuerda * Math.cos(simVars.anguloPendulo);
+
+                    // Si presionamos cerca de la esfera, comenzamos a arrastrarla
+                    const distancia = Math.hypot(mx - xEsfera, my - yEsfera);
+                    if (distancia < 30) {
+                        simVars.isDraggingPendulo = true;
+                        simVars.velAngular = 0;
+                    }
+                };
+
+                const moverArrastrePendulo = (clientX, clientY) => {
+                    if (!simVars.isDraggingPendulo) return;
+                    const rect = canvas.getBoundingClientRect();
+                    const mx = (clientX - rect.left) * (canvas.width / rect.width);
+                    const my = (clientY - rect.top) * (canvas.height / rect.height);
+
+                    // Calcular el ángulo usando trigonometría (atan2 entre el pivote y el mouse)
+                    const dx = mx - cx;
+                    const dy = my - cy;
+                    let nuevoAngulo = Math.atan2(dx, dy);
+
+                    // Limitar el ángulo máximo de apertura (ej. entre -75° y +75° para que no dé vuelta completa)
+                    const limiteMax = (75 * Math.PI) / 180;
+                    simVars.anguloPendulo = Math.max(-limiteMax, Math.min(limiteMax, nuevoAngulo));
+                    simVars.velAngular = 0;
+
+                    // Actualizar el valor en tiempo real hacia el slider o variable de control
+                    const gradosActuales = Math.round((simVars.anguloPendulo * 180) / Math.PI);
+                    simVars.param1 = Math.abs(gradosActuales);
+                    
+                    const tagCtrl = document.getElementById("val-ctrl1");
+                    if (tagCtrl) tagCtrl.innerText = Math.abs(gradosActuales) + "°";
+                };
+
+                const soltarArrastrePendulo = () => {
+                    simVars.isDraggingPendulo = false;
+                };
+
+                // Eventos de Mouse
+                canvas.addEventListener('mousedown', (e) => iniciarArrastrePendulo(e.clientX, e.clientY));
+                window.addEventListener('mousemove', (e) => moverArrastrePendulo(e.clientX, e.clientY));
+                window.addEventListener('mouseup', soltarArrastrePendulo);
+
+                // Eventos Táctiles (Celulares / Tablets)
+                canvas.addEventListener('touchstart', (e) => {
+                    if (e.touches.length > 0) iniciarArrastrePendulo(e.touches[0].clientX, e.touches[0].clientY);
+                });
+                window.addEventListener('touchmove', (e) => {
+                    if (e.touches.length > 0) moverArrastrePendulo(e.touches[0].clientX, e.touches[0].clientY);
+                });
+                window.addEventListener('touchend', soltarArrastrePendulo);
+            }
+
+            // Lógica de movimiento: Si el usuario lo está arrastrando, se queda en su dedo; si lo suelta, oscila con física real
             if (esDemo) {
-                // Física real de péndulo: acelera al caer, desacelera al subir
                 const aceleracionAngular = (-g / longitudCuerda) * Math.sin(simVars.anguloPendulo);
                 simVars.velAngular += aceleracionAngular;
                 simVars.anguloPendulo += simVars.velAngular;
-                simVars.velAngular *= 0.995; // Fricción muy leve
+                simVars.velAngular *= 0.995;
             } else {
-                // En experimentación, responde de forma armónica al slider del usuario
-                const gradosAmplitud = simVars.param1 !== undefined ? simVars.param1 : 45;
-                const anguloMaximo = (gradosAmplitud * Math.PI) / 180;
-                simVars.anguloPendulo = anguloMaximo * Math.sin(t * 2);
+                if (!simVars.isDraggingPendulo) {
+                    // Si ya lo soltamos en el paso 4, oscila usando la amplitud a la que lo llevamos
+                    const gradosAmplitud = simVars.param1 !== undefined ? simVars.param1 : 45;
+                    const anguloMaximo = (gradosAmplitud * Math.PI) / 180;
+                    simVars.anguloPendulo = anguloMaximo * Math.sin(t * 2);
+                }
             }
 
             const xEsfera = cx + longitudCuerda * Math.sin(simVars.anguloPendulo);
             const yEsfera = cy + longitudCuerda * Math.cos(simVars.anguloPendulo);
 
+            // Dibujar soporte superior
             ctx.fillStyle = "#94a3b8";
             ctx.fillRect(cx - 20, cy - 10, 40, 8);
 
-            ctx.strokeStyle = "#38bdf8";
+            // Dibujar cuerda (dinámica y fluida)
+            ctx.strokeStyle = simVars.isDraggingPendulo ? "#10b981" : "#38bdf8";
             ctx.lineWidth = 3;
             ctx.beginPath();
             ctx.moveTo(cx, cy);
             ctx.lineTo(xEsfera, yEsfera);
             ctx.stroke();
 
-            ctx.fillStyle = "#a855f7";
-            ctx.shadowColor = "#a855f7";
+            // Dibujar esfera del péndulo (cambia a verde brillante al sostenerla)
+            ctx.fillStyle = simVars.isDraggingPendulo ? "#10b981" : "#a855f7";
+            ctx.shadowColor = simVars.isDraggingPendulo ? "#10b981" : "#a855f7";
             ctx.shadowBlur = 15;
             ctx.beginPath();
             ctx.arc(xEsfera, yEsfera, 16, 0, Math.PI * 2);
             ctx.fill();
             ctx.shadowBlur = 0;
 
-        } else {
-            ctx.strokeStyle = "#a855f7";
-            ctx.lineWidth = 3;
-            ctx.shadowColor = "#a855f7";
-            ctx.shadowBlur = 8;
-            ctx.beginPath();
-            for (let i = 0; i < canvas.width; i += 20) {
-                let y = (canvas.height / 2) + Math.sin(t + i * 0.05) * 35;
-                if (i === 0) ctx.moveTo(i, y);
-                else ctx.lineTo(i, y);
-            }
-            ctx.stroke();
-            ctx.shadowBlur = 0;
-        }
+            // Mostrar indicador visual del ángulo de apertura actual sobre el canvas mientras se arrastra
+            if (simVars.isDraggingPendulo) {
+                ctx.fillStyle = "rgba(10, 14, 20, 0.8)";
+                ctx.fillRect(cx - 60, canvas.height - 40, 120, 30);
+                ctx.strokeStyle = "#10b981";
+                ctx.strokeRect(cx - 60, canvas.height - 40, 120, 30);
 
-        animId = requestAnimationFrame(render);
-    }
-    render();
-}
+                ctx.fillStyle = "#10b981";
+                ctx.font = "bold 13px system-ui, sans-serif";
+                ctx.textAlign = "center";
+                ctx.fillText(`Ángulo: ${Math.round((simVars.anguloPendulo * 180) / Math.PI)}°`, cx, canvas.height - 21);
+                ctx.textAlign = "left";
+            }
 /* HARDWARE / SENSORES */
 function detectarSensores() {
     if (window.DeviceMotionEvent) {
