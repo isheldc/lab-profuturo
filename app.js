@@ -1196,7 +1196,67 @@ function arrancarCanvas(canvasId, tipo, esDemo) {
 
     let xPos = 40;
     let t = 0;
-    let velocidadActual = 0; // Velocidad de desplazamiento actual con inercia
+    let velocidadActual = 0;
+    let carroEnElBorde = false;
+    let isDragging = false;
+
+    // Configurar eventos de arrastre (mouse y táctil) una sola vez por canvas
+    if (!canvas._dragListenersAttached) {
+        canvas._dragListenersAttached = true;
+
+        canvas.addEventListener('mousedown', (e) => {
+            const rect = canvas.getBoundingClientRect();
+            const mouseX = (e.clientX - rect.left) * (canvas.width / rect.width);
+            const mouseY = (e.clientY - rect.top) * (canvas.height / rect.height);
+            
+            // Detectar si el clic es sobre la posición actual del carro
+            if (mouseX >= xPos - 15 && mouseX <= xPos + 75 && mouseY >= canvas.height - 75 && mouseY <= canvas.height - 20) {
+                isDragging = true;
+            }
+        });
+
+        window.addEventListener('mousemove', (e) => {
+            if (!isDragging) return;
+            const rect = canvas.getBoundingClientRect();
+            let mouseX = (e.clientX - rect.left) * (canvas.width / rect.width);
+            xPos = Math.max(40, Math.min(mouseX - 30, canvas.width - 70));
+            velocidadActual = 0;
+            if (xPos < canvas.width - 70) {
+                carroEnElBorde = false;
+            }
+        });
+
+        window.addEventListener('mouseup', () => {
+            isDragging = false;
+        });
+
+        canvas.addEventListener('touchstart', (e) => {
+            const touch = e.touches[0];
+            const rect = canvas.getBoundingClientRect();
+            const touchX = (touch.clientX - rect.left) * (canvas.width / rect.width);
+            const touchY = (touch.clientY - rect.top) * (canvas.height / rect.height);
+            
+            if (touchX >= xPos - 15 && touchX <= xPos + 75 && touchY >= canvas.height - 75 && touchY <= canvas.height - 20) {
+                isDragging = true;
+            }
+        });
+
+        window.addEventListener('touchmove', (e) => {
+            if (!isDragging) return;
+            const touch = e.touches[0];
+            const rect = canvas.getBoundingClientRect();
+            let touchX = (touch.clientX - rect.left) * (canvas.width / rect.width);
+            xPos = Math.max(40, Math.min(touchX - 30, canvas.width - 70));
+            velocidadActual = 0;
+            if (xPos < canvas.width - 70) {
+                carroEnElBorde = false;
+            }
+        });
+
+        window.addEventListener('touchend', () => {
+            isDragging = false;
+        });
+    }
 
     function render() {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -1213,26 +1273,27 @@ function arrancarCanvas(canvasId, tipo, esDemo) {
             if (esDemo) {
                 xPos = 120 + Math.sin(t * 2) * 80;
             } else {
-                // Si el usuario presionó el botón de impulso, capturamos la aceleración inicial una sola vez
                 if (simVars.impulsoActivo) {
-                    velocidadActual = (simVars.velocidadAcc || 2.0) * 0.4; // Factor de escala visual
-                    simVars.impulsoActivo = false; // Desactivamos el trigger del botón para dejar actuar la inercia
+                    velocidadActual = (simVars.velocidadAcc || 2.0) * 0.4;
+                    simVars.impulsoActivo = false;
+                    carroEnElBorde = false;
                 }
 
-                // SI hay velocidad acumulada, movemos el carro y aplicamos fricción gradual
-                if (velocidadActual > 0.05) {
-                    xPos += velocidadActual;
-                    
-                    // FRICCIÓN: Reduce la velocidad progresivamente en cada fotograma (ajusta de 0.94 a 0.98 si quieres más/menos fricción)
-                    velocidadActual *= 0.96; 
-                } else {
-                    velocidadActual = 0;
+                // Si no se está arrastrando manualmente, aplicamos inercia y fricción
+                if (!isDragging) {
+                    if (velocidadActual > 0.05) {
+                        xPos += velocidadActual;
+                        velocidadActual *= 0.96; 
+                    } else {
+                        velocidadActual = 0;
+                    }
                 }
 
-                // Límite de la pista para evitar que salga de la pantalla
-                if (xPos > canvas.width - 70) {
+                // Verificar si llegó al final de la pista y se detuvo
+                if (xPos >= canvas.width - 70 && velocidadActual <= 0.05 && !isDragging) {
                     xPos = canvas.width - 70;
                     velocidadActual = 0;
+                    carroEnElBorde = true;
                 }
 
                 if (sensorActivo) {
@@ -1240,9 +1301,9 @@ function arrancarCanvas(canvasId, tipo, esDemo) {
                 }
             }
 
-            // Dibujar el carrito
-            ctx.fillStyle = "#00e5ff";
-            ctx.shadowColor = "#00e5ff";
+            // Dibujar el carrito (cambia de color verde si lo estás arrastrando)
+            ctx.fillStyle = isDragging ? "#10b981" : "#00e5ff";
+            ctx.shadowColor = isDragging ? "#10b981" : "#00e5ff";
             ctx.shadowBlur = 10;
             ctx.fillRect(xPos, canvas.height - 65, 60, 25);
             ctx.shadowBlur = 0;
@@ -1252,6 +1313,22 @@ function arrancarCanvas(canvasId, tipo, esDemo) {
             ctx.arc(xPos + 12, canvas.height - 38, 7, 0, Math.PI * 2);
             ctx.arc(xPos + 48, canvas.height - 38, 7, 0, Math.PI * 2);
             ctx.fill();
+
+            // Pantalla emergente en el canvas cuando se detiene al final
+            if (carroEnElBorde && !esDemo) {
+                ctx.fillStyle = "rgba(10, 14, 20, 0.85)";
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+                ctx.fillStyle = "#00e5ff";
+                ctx.font = "bold 14px system-ui, sans-serif";
+                ctx.textAlign = "center";
+                ctx.fillText("⚠️ ¡El carro se ha detenido al final de la pista!", canvas.width / 2, canvas.height / 2 - 15);
+
+                ctx.fillStyle = "#ffffff";
+                ctx.font = "12px system-ui, sans-serif";
+                ctx.fillText("👆 Mantén presionado y desliza el carro hacia la izquierda para reiniciar", canvas.width / 2, canvas.height / 2 + 10);
+                ctx.textAlign = "left";
+            }
 
         } else if (tipo === "ph") {
             const cx = canvas.width / 2;
