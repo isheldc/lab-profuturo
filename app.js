@@ -1196,7 +1196,7 @@ function arrancarCanvas(canvasId, tipo, esDemo) {
 
     let xPos = 40;
     let t = 0;
-    let velocidadActual = 0;
+    let velocidadActual = 0; // Velocidad de desplazamiento actual con inercia
 
     function render() {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -1213,17 +1213,25 @@ function arrancarCanvas(canvasId, tipo, esDemo) {
             if (esDemo) {
                 xPos = 120 + Math.sin(t * 2) * 80;
             } else {
-                // Si el usuario presionó el botón de impulso, usamos la aceleración real (F / m)
+                // Si el usuario presionó el botón de impulso, capturamos la aceleración inicial una sola vez
                 if (simVars.impulsoActivo) {
-                    velocidadActual = simVars.velocidadAcc || 2.0;
-                    xPos += velocidadActual * 0.8;
+                    velocidadActual = (simVars.velocidadAcc || 2.0) * 0.4; // Factor de escala visual
+                    simVars.impulsoActivo = false; // Desactivamos el trigger del botón para dejar actuar la inercia
+                }
 
-                    if (xPos > canvas.width - 70) {
-                        xPos = 40; // Reinicia al llegar al final de la pista
-                        simVars.impulsoActivo = false;
-                    }
+                // SI hay velocidad acumulada, movemos el carro y aplicamos fricción gradual
+                if (velocidadActual > 0.05) {
+                    xPos += velocidadActual;
+                    
+                    // FRICCIÓN: Reduce la velocidad progresivamente en cada fotograma (ajusta de 0.94 a 0.98 si quieres más/menos fricción)
+                    velocidadActual *= 0.96; 
                 } else {
-                    // Si no se ha aplicado impulso, el carro permanece estático en la salida
+                    velocidadActual = 0;
+                }
+
+                // Límite de la pista para evitar que salga de la pantalla
+                if (xPos > canvas.width - 70) {
+                    xPos = canvas.width - 70;
                     velocidadActual = 0;
                 }
 
