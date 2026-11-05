@@ -1200,6 +1200,12 @@ function arrancarCanvas(canvasId, tipo, esDemo) {
     let carroEnElBorde = false;
     let isDragging = false;
 
+    // Inicializar variables físicas del péndulo si no existen
+    if (simVars.anguloPendulo === undefined) {
+        simVars.anguloPendulo = (45 * Math.PI) / 180;
+        simVars.velAngular = 0;
+    }
+
     // Configurar eventos de arrastre (mouse y táctil) una sola vez por canvas
     if (!canvas._dragListenersAttached) {
         canvas._dragListenersAttached = true;
@@ -1349,13 +1355,23 @@ function arrancarCanvas(canvasId, tipo, esDemo) {
             const cx = canvas.width / 2;
             const cy = 30;
             const longitudCuerda = 120;
+            const g = 0.4; // Gravedad visual para aceleración realista
 
-            const gradosAmplitud = simVars.param1 !== undefined ? simVars.param1 : 45;
-            const anguloMaximo = (gradosAmplitud * Math.PI) / 180;
-            const angulo = anguloMaximo * Math.sin(t);
+            if (esDemo) {
+                // Física real de péndulo: acelera al caer, desacelera al subir
+                const aceleracionAngular = (-g / longitudCuerda) * Math.sin(simVars.anguloPendulo);
+                simVars.velAngular += aceleracionAngular;
+                simVars.anguloPendulo += simVars.velAngular;
+                simVars.velAngular *= 0.995; // Fricción muy leve
+            } else {
+                // En experimentación, responde de forma armónica al slider del usuario
+                const gradosAmplitud = simVars.param1 !== undefined ? simVars.param1 : 45;
+                const anguloMaximo = (gradosAmplitud * Math.PI) / 180;
+                simVars.anguloPendulo = anguloMaximo * Math.sin(t * 2);
+            }
 
-            const xEsfera = cx + longitudCuerda * Math.sin(angulo);
-            const yEsfera = cy + longitudCuerda * Math.cos(angulo);
+            const xEsfera = cx + longitudCuerda * Math.sin(simVars.anguloPendulo);
+            const yEsfera = cy + longitudCuerda * Math.cos(simVars.anguloPendulo);
 
             ctx.fillStyle = "#94a3b8";
             ctx.fillRect(cx - 20, cy - 10, 40, 8);
